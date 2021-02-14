@@ -49,9 +49,5 @@ func (d *Dispatcher) Dispatch(updateChan tbBot.UpdatesChannel) error {
 			}
 		}
 
-		msg := "Hello, you're in the main state. You may choose current state by command, to see all available commands enter /help"
-		if err := d.tbBot.Send(update.Message.Chat.ID, msg); err != nil {
-			log.Printf("failed to send the message to chat: %s", err.Error())
-		}
 	}
 }

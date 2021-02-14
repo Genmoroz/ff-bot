@@ -1,6 +1,6 @@
 package handler
 
-import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+import tgBot "github.com/go-telegram-bot-api/telegram-bot-api"
 
 const (
 	// commands
@@ -9,5 +9,5 @@ const (
 )
 
 type Handler interface {
-	Handle(updateChan tgbotapi.UpdatesChannel) error
+	Handle(updateChan tgBot.UpdatesChannel) error
 }

@@ -33,5 +33,4 @@ func main() {
 	if err = disptch.Dispatch(updateChan); err != nil {
 		log.Fatalf("failed to dispatch the updateChan: %s", err.Error())
 	}
-	//strings.Trim("","")
 }
