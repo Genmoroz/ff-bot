@@ -2,17 +2,18 @@ package dispatcher
 
 import (
 	"errors"
+	"fmt"
+	"log"
+
 	"ff-bot/bot"
 	"ff-bot/chat"
 	"ff-bot/handler"
-	"fmt"
 	tbBot "github.com/go-telegram-bot-api/telegram-bot-api"
-	"log"
 )
 
 type Dispatcher struct {
 	tbBot      bot.Client
-	chatMap    map[int64]chat.Chat
+	chatMap    map[int64]*chat.Chat
 	handlerMap map[string]handler.Handler
 }
 
@@ -26,7 +27,7 @@ func New(tbBot bot.Client, handlerMap map[string]handler.Handler) (*Dispatcher, 
 
 	return &Dispatcher{
 		tbBot:      tbBot,
-		chatMap:    make(map[int64]chat.Chat),
+		chatMap:    make(map[int64]*chat.Chat),
 		handlerMap: handlerMap,
 	}, nil
 }
@@ -40,7 +41,10 @@ func (d *Dispatcher) Dispatch(updateChan tbBot.UpdatesChannel) error {
 	}
 
 	for {
-		update := <-updateChan
+		update, ok := <-updateChan
+		if !ok {
+			log.Fatal("updateChan is closed")
+		}
 
 		chatID := update.Message.Chat.ID
 		existedChat, exist := d.chatMap[chatID]
@@ -59,7 +63,7 @@ func (d *Dispatcher) Dispatch(updateChan tbBot.UpdatesChannel) error {
 	}
 }
 
-func (d *Dispatcher) putUpdateIntoChatAndLog(c chat.Chat, update tbBot.Update, chatID int64) {
+func (d *Dispatcher) putUpdateIntoChatAndLog(c *chat.Chat, update tbBot.Update, chatID int64) {
 	if err := c.PutUpdate(update); err != nil {
 		log.Printf("failed to put the update into the chat[ID:%d]: %s", chatID, err.Error())
 	}

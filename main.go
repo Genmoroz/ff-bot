@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"sync"
-	"time"
 
 	"ff-bot/bot"
 	"ff-bot/config"
@@ -40,20 +39,18 @@ func main() {
 
 	wg := sync.WaitGroup{}
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		if err = disptch.Dispatch(updateChan); err != nil {
 			log.Fatalf("failed to dispatch the updateChan: %s", err.Error())
 		}
 		wg.Done()
 	}()
 
-	ctx, _ := context.WithTimeout(context.Background(), 1996*time.Hour)
-
 	r := router.New(cfg.Router.Port)
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
-		if err = r.ListenAndServe(ctx); err != nil {
+		if err = r.ListenAndServeWithContext(context.TODO()); err != nil {
 			log.Fatalf("failed to start the router: %s", err.Error())
 		}
 		wg.Done()

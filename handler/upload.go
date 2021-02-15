@@ -27,7 +27,11 @@ func (h *uploadHandler) Handle(updateChan tgBot.UpdatesChannel, chatID int64) er
 		log.Printf("failed to send the message to chat: %s", err.Error())
 	}
 	for {
-		update := <-updateChan
+		update, ok := <-updateChan
+		if !ok {
+			log.Printf("updateChan is closed")
+			return nil
+		}
 
 		text := update.Message.Text
 		if text == End {

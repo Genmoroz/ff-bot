@@ -16,14 +16,14 @@ type Chat struct {
 	handlerMap map[string]handler.Handler
 }
 
-func New(id int64, tgBot bot.Client, handlerMap map[string]handler.Handler) (Chat, error) {
+func New(id int64, tgBot bot.Client, handlerMap map[string]handler.Handler) (*Chat, error) {
 	if handlerMap == nil {
-		return Chat{}, errors.New("handlerMap cannot be nil")
+		return nil, errors.New("handlerMap cannot be nil")
 	}
 	if tgBot == nil {
-		return Chat{}, errors.New("tgBot cannot be nil")
+		return nil, errors.New("tgBot cannot be nil")
 	}
-	return Chat{
+	return &Chat{
 		id:         id,
 		tgBot:      tgBot,
 		updateChan: make(chan tgBotApi.Update, 1),
@@ -31,7 +31,7 @@ func New(id int64, tgBot bot.Client, handlerMap map[string]handler.Handler) (Cha
 	}, nil
 }
 
-func (c Chat) PutUpdate(update tgBotApi.Update) error {
+func (c *Chat) PutUpdate(update tgBotApi.Update) error {
 	if update.Message.Chat.ID != c.id {
 		return errors.New("the message was not delivered, chatIDs do not match")
 	}
@@ -41,9 +41,13 @@ func (c Chat) PutUpdate(update tgBotApi.Update) error {
 	return nil
 }
 
-func (c Chat) Start() {
+func (c *Chat) Start() {
 	for {
-		update := <-c.updateChan
+		update, ok := <-c.updateChan
+		if !ok {
+			log.Printf("updateChan is closed")
+			return
+		}
 
 		text := update.Message.Text
 		h, exist := c.handlerMap[text]
@@ -58,4 +62,11 @@ func (c Chat) Start() {
 			}
 		}
 	}
+}
+
+func (c *Chat) Close() error { // nolint:unparam
+	c.handlerMap = nil
+	close(c.updateChan)
+
+	return nil
 }
