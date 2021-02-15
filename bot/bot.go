@@ -8,7 +8,7 @@ import (
 
 type (
 	Client interface {
-		Send(int64, string) error
+		Send(string, int64) error
 		GetUpdateChannel(offset, limit, timeout int) (tbBot.UpdatesChannel, error)
 	}
 
@@ -28,7 +28,7 @@ func NewTBBotClient(token string) (Client, error) {
 	}, nil
 }
 
-func (c *client) Send(chatID int64, msg string) error {
+func (c *client) Send(msg string, chatID int64) error {
 	msgConfig := tbBot.NewMessage(chatID, msg)
 	_, err := c.bot.Send(msgConfig)
 	if err != nil {

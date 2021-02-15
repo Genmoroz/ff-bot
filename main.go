@@ -6,7 +6,6 @@ import (
 	"ff-bot/bot"
 	"ff-bot/config"
 	"ff-bot/dispatcher"
-	"ff-bot/handler"
 )
 
 func main() {
@@ -20,7 +19,7 @@ func main() {
 		log.Fatalf("failed to create the Telegram bot: %s", err.Error())
 	}
 
-	disptch, err := dispatcher.New(tbBot, handler.NewUploadHandler(tbBot))
+	disptch, err := dispatcher.New(tbBot)
 	if err != nil {
 		log.Fatalf("failed to create the dispatcher: %s", err.Error())
 	}

@@ -26,7 +26,7 @@ func New(id int64, tgBot bot.Client, handlerMap map[string]handler.Handler) (Cha
 	return Chat{
 		id:         id,
 		tgBot:      tgBot,
-		updateChan: make(chan tgBotApi.Update),
+		updateChan: make(chan tgBotApi.Update, 1),
 		handlerMap: handlerMap,
 	}, nil
 }
@@ -41,20 +41,20 @@ func (c Chat) PutUpdate(update tgBotApi.Update) error {
 	return nil
 }
 
-func (c Chat) Process() {
+func (c Chat) Start() {
 	for {
 		update := <-c.updateChan
 
 		text := update.Message.Text
 		h, exist := c.handlerMap[text]
-		if !exist {
-			msg := "Unknown command, you're in the main state. You may choose current state by command, to see all available commands enter /help"
-			if err := c.tgBot.Send(c.id, msg); err != nil {
-				log.Printf("failed to send the message to chat[ID:%d]: %s", c.id, err.Error())
+		if exist {
+			if err := h.Handle(c.updateChan, c.id); err != nil {
+				log.Printf("failed to handle the updateChan in chat[ID:%d]: %s", c.id, err.Error())
 			}
 		} else {
-			if err := h.Handle(c.updateChan); err != nil {
-				log.Printf("failed to handle the updateChan in chat[ID:%d]: %s", c.id, err.Error())
+			msg := "Unknown command, you're in the main state. You may choose current state by command, to see all available commands enter /help"
+			if err := c.tgBot.Send(msg, c.id); err != nil {
+				log.Printf("failed to send the message to chat[ID:%d]: %s", c.id, err.Error())
 			}
 		}
 	}
