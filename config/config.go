@@ -6,9 +6,16 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-type Config struct {
-	TelegramToken string `split_words:"true" required:"true"`
-}
+type (
+	Config struct {
+		Router        Router
+		TelegramToken string `split_words:"true" required:"true"`
+	}
+
+	Router struct {
+		Port int32 `envconfig:"APP_ROUTER_PORT" required:"true"`
+	}
+)
 
 func ReadEnv() (Config, error) {
 	var config Config

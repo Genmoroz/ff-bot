@@ -1,11 +1,16 @@
 package main
 
 import (
+	"context"
 	"log"
+	"sync"
+	"time"
 
 	"ff-bot/bot"
 	"ff-bot/config"
 	"ff-bot/dispatcher"
+	"ff-bot/handler"
+	"ff-bot/router"
 )
 
 func main() {
@@ -19,7 +24,11 @@ func main() {
 		log.Fatalf("failed to create the Telegram bot: %s", err.Error())
 	}
 
-	disptch, err := dispatcher.New(tbBot)
+	handlerMap := make(map[string]handler.Handler)
+	handlerMap[handler.Upload] = handler.NewUploadHandler(tbBot)
+	handlerMap[handler.Start] = handler.NewStartHandler(tbBot)
+
+	disptch, err := dispatcher.New(tbBot, handlerMap)
 	if err != nil {
 		log.Fatalf("failed to create the dispatcher: %s", err.Error())
 	}
@@ -29,7 +38,26 @@ func main() {
 		log.Fatalf("failed to create the Telegram bot: %s", err.Error())
 	}
 
-	if err = disptch.Dispatch(updateChan); err != nil {
-		log.Fatalf("failed to dispatch the updateChan: %s", err.Error())
-	}
+	wg := sync.WaitGroup{}
+
+	go func() {
+		wg.Add(1)
+		if err = disptch.Dispatch(updateChan); err != nil {
+			log.Fatalf("failed to dispatch the updateChan: %s", err.Error())
+		}
+		wg.Done()
+	}()
+
+	ctx, _ := context.WithTimeout(context.Background(), 1996*time.Hour)
+
+	r := router.New(cfg.Router.Port)
+	go func() {
+		wg.Add(1)
+		if err = r.ListenAndServe(ctx); err != nil {
+			log.Fatalf("failed to start the router: %s", err.Error())
+		}
+		wg.Done()
+	}()
+
+	wg.Wait()
 }
