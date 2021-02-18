@@ -8,7 +8,7 @@ import (
 	"ff-bot/bot"
 	"ff-bot/config"
 	"ff-bot/dispatcher"
-	"ff-bot/handler"
+	"ff-bot/processor"
 	"ff-bot/router"
 )
 
@@ -23,11 +23,7 @@ func main() {
 		log.Fatalf("failed to create the Telegram bot: %s", err.Error())
 	}
 
-	handlerMap := make(map[string]handler.Handler)
-	handlerMap[handler.Upload] = handler.NewUploadHandler(tbBot)
-	handlerMap[handler.Start] = handler.NewStartHandler(tbBot)
-
-	disptch, err := dispatcher.New(tbBot, handlerMap)
+	disptchr, err := dispatcher.New(tbBot, createStateProcessorMapFunc(cfg.FileStorePath))
 	if err != nil {
 		log.Fatalf("failed to create the dispatcher: %s", err.Error())
 	}
@@ -41,7 +37,7 @@ func main() {
 
 	wg.Add(1)
 	go func() {
-		if err = disptch.Dispatch(updateChan); err != nil {
+		if err = disptchr.Dispatch(updateChan); err != nil {
 			log.Fatalf("failed to dispatch the updateChan: %s", err.Error())
 		}
 		wg.Done()
@@ -57,4 +53,13 @@ func main() {
 	}()
 
 	wg.Wait()
+}
+
+func createStateProcessorMapFunc(fileStorePath string) func(tgBot bot.Client, chatID int64) map[string]processor.StateProcessor {
+	return func(tgBot bot.Client, chatID int64) map[string]processor.StateProcessor {
+		return map[string]processor.StateProcessor{
+			processor.Start: processor.NewStartStateProcessor(tgBot, chatID),
+			processor.Store: processor.NewStoreStateProcessor(tgBot, chatID, fileStorePath),
+		}
+	}
 }

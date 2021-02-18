@@ -10,6 +10,7 @@ type (
 	Config struct {
 		Router        Router
 		TelegramToken string `split_words:"true" required:"true"`
+		FileStorePath string `split_words:"true" required:"true"`
 	}
 
 	Router struct {
