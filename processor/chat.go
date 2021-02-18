@@ -2,6 +2,7 @@ package processor
 
 import (
 	"errors"
+	"fmt"
 	"log"
 
 	"ff-bot/bot"
@@ -16,11 +17,11 @@ type ChatProcessor struct {
 }
 
 func New(chatID int64, tgBot bot.Client, stateProcessorMap map[string]StateProcessor) (*ChatProcessor, error) {
-	if stateProcessorMap == nil {
-		return nil, errors.New("stateProcessorMap cannot be nil")
-	}
 	if tgBot == nil {
 		return nil, errors.New("tgBot cannot be nil")
+	}
+	if stateProcessorMap == nil {
+		return nil, errors.New("stateProcessorMap cannot be nil")
 	}
 	return &ChatProcessor{
 		chatID:            chatID,
@@ -52,13 +53,19 @@ func (p *ChatProcessor) Process() {
 		stateProcessor, exist := p.stateProcessorMap[text]
 		if exist {
 			if err := stateProcessor.Process(p.updateChan); err != nil {
-				log.Printf("failed to handle the updateChan in processor[ID:%d]: %s", p.chatID, err.Error())
+				msg := fmt.Sprintf("failed to process the state %s, chatID: %d, error: %s", text, p.chatID, err.Error())
+				sendAndPrint(msg, p.chatID, p.tgBot)
 			}
 		} else {
-			msg := "Unknown command, you're in the main state. You may choose current state by command, to see all available commands enter /help"
+			msg := "Unknown command. You may choose current state by command, to see all available commands enter /help"
 			if err := p.tgBot.Send(msg, p.chatID); err != nil {
-				log.Printf("failed to send the message to processor[ID:%d]: %s", p.chatID, err.Error())
+				msg := fmt.Sprintf("failed to send the message to the chat processor[ID:%d]: %s", p.chatID, err.Error())
+				sendAndPrint(msg, p.chatID, p.tgBot)
 			}
+		}
+		if err := p.tgBot.Send("You're in the main state", p.chatID); err != nil {
+			msg := fmt.Sprintf("failed to send the message to the chat processor[ID:%d]: %s", p.chatID, err.Error())
+			sendAndPrint(msg, p.chatID, p.tgBot)
 		}
 	}
 }

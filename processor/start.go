@@ -20,8 +20,7 @@ func NewStartStateProcessor(tbBot bot.Client, chatID int64) StateProcessor {
 func (p *startStateProcessor) Process(_ tgBotApi.UpdatesChannel) error {
 	msg := "Hey there, this is First Frost Bot. Author genvmoroz@gmail.com. To list all available commands enter /help."
 	if err := p.tgBot.Send(msg, p.chatID); err != nil {
-		errMsg := fmt.Sprintf("failed to send the message[chatID:%d]: %s", p.chatID, err.Error())
-		sendAndPrint(errMsg, p.chatID, p.tgBot)
+		return fmt.Errorf("failed to send the message: %w", err)
 	}
 
 	return nil

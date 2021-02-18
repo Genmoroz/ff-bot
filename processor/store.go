@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime"
-	"syscall"
-	"time"
 
 	"ff-bot/bot"
 	tgBotApi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -16,7 +13,7 @@ import (
 type storeStateProcessor struct {
 	baseStateProcessor
 	fileStorePath    string
-	totalStoredFiles int
+	totalStoredFiles uint32
 }
 
 func NewStoreStateProcessor(tbBot bot.Client, chatID int64, fileStorePath string) StateProcessor {
@@ -33,8 +30,9 @@ func (p *storeStateProcessor) Process(updateChan tgBotApi.UpdatesChannel) error 
 
 	p.totalStoredFiles = 0
 	if err := p.tgBot.Send("You're in the store state.", p.chatID); err != nil {
-		return fmt.Errorf("failed to send the message[chatID:%d]: %w", p.chatID, err)
+		return fmt.Errorf("failed to send the message: %w", err)
 	}
+
 	for {
 		update, ok := <-updateChan
 		if !ok {
@@ -54,13 +52,13 @@ func (p *storeStateProcessor) Process(updateChan tgBotApi.UpdatesChannel) error 
 		}
 
 		if err := p.resolveFilesAndStore(*update.Message); err != nil {
-
+			return fmt.Errorf("failed to resolve files amd store: %w", err)
 		}
 	}
 }
 
 func (p *storeStateProcessor) resolveFilesAndStore(message tgBotApi.Message) error {
-	var storedCount int32
+	var storedCount uint32
 	if message.Document != nil {
 		if err := p.storeDocument(*message.Document); err != nil {
 			return fmt.Errorf("failed to store document: %w", err)
@@ -68,10 +66,14 @@ func (p *storeStateProcessor) resolveFilesAndStore(message tgBotApi.Message) err
 		storedCount++
 	}
 
+	p.totalStoredFiles += storedCount
+
 	if storedCount == 0 {
 		if err := p.tgBot.Send("0 files were stored, in order to store some files you should upload some files.", p.chatID); err != nil {
-			return fmt.Errorf("failed to send the message[chatID:%d]: %w", p.chatID, err)
+			return fmt.Errorf("failed to send the message: %w", err)
 		}
+	} else if err := p.tgBot.Send(fmt.Sprintf("%d files stored.", storedCount), p.chatID); err != nil {
+		return fmt.Errorf("failed to send the message: %w", err)
 	}
 
 	return nil
@@ -81,7 +83,7 @@ func (p *storeStateProcessor) storeDocument(document tgBotApi.Document) error {
 	if err := p.downloadDocument(document); err != nil {
 		return fmt.Errorf("failed to download: %w", err)
 	}
-	creationTimeAsString, err := p.getCreationTimeAsString(document.FileName)
+	creationTimeAsString, err := p.getModTimeAsString(document.FileName)
 	if err != nil {
 		return fmt.Errorf("failed to get creation time as string: %w", err)
 	}
@@ -119,33 +121,11 @@ func (p *storeStateProcessor) downloadDocument(document tgBotApi.Document) error
 	return nil
 }
 
-func (p *storeStateProcessor) getCreationTimeAsString(fileName string) (string, error) {
+func (p *storeStateProcessor) getModTimeAsString(fileName string) (string, error) {
 	fileInfo, err := os.Stat(fileName)
 	if err != nil {
 		return "", fmt.Errorf("failed to read stats of file %s: %w", fileName, err)
 	}
 
-	creationTime := time.Now()
-	switch runtime.GOOS {
-	case "windows":
-		win32File := fileInfo.Sys().(*syscall.Win32FileAttributeData)
-		creationTime = fileTimeToTime(win32File.CreationTime.LowDateTime, win32File.CreationTime.HighDateTime)
-	case "darwin":
-		return "", fmt.Errorf("darwin: %+v", fileInfo.Sys())
-	case "linux":
-		return "", fmt.Errorf("linux: %+v", fileInfo.Sys())
-	default:
-		return "", fmt.Errorf("unknown GOOS: %s", runtime.GOOS)
-	}
-
-	return creationTime.Format("2006-01-02"), nil
-}
-
-func fileTimeToTime(low, high uint32) time.Time {
-	var fileTime int64
-	fileTime = int64(high)
-	fileTime <<= 32
-	fileTime += int64(low)
-
-	return time.Unix(fileTime/10000000-11644473600, 0)
+	return fileInfo.ModTime().Format("2006-01-02"), nil
 }
