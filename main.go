@@ -18,17 +18,17 @@ func main() {
 		log.Fatalf("failed to read the envs: %s", err.Error())
 	}
 
-	tbBot, err := bot.NewTBBotClient(cfg.TelegramToken)
+	tgBot, err := bot.NewTGBotClient(cfg.TelegramToken)
 	if err != nil {
 		log.Fatalf("failed to create the Telegram bot: %s", err.Error())
 	}
 
-	disptchr, err := dispatcher.New(tbBot, createStateProcessorMapFunc(cfg.FileStorePath))
+	disptchr, err := dispatcher.New(tgBot, createStateProcessorMapFunc(cfg.FileStorePath))
 	if err != nil {
 		log.Fatalf("failed to create the dispatcher: %s", err.Error())
 	}
 
-	updateChan, err := tbBot.GetUpdateChannel(0, 0, 60)
+	updateChan, err := tgBot.GetUpdateChannel(0, 0, 60)
 	if err != nil {
 		log.Fatalf("failed to create the Telegram bot: %s", err.Error())
 	}

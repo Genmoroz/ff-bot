@@ -2,27 +2,27 @@ package bot
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 
-	tbBot "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgBot "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 type (
 	Client interface {
 		Send(string, int64) error
-		GetUpdateChannel(offset, limit, timeout int) (tbBot.UpdatesChannel, error)
+		GetUpdateChannel(offset, limit, timeout int) (tgBot.UpdatesChannel, error)
 		DownloadFile(fileID string) ([]byte, error)
 	}
 
 	client struct {
-		bot *tbBot.BotAPI
+		bot *tgBot.BotAPI
 	}
 )
 
-func NewTBBotClient(token string) (Client, error) {
-	bot, err := tbBot.NewBotAPI(token)
+func NewTGBotClient(token string) (Client, error) {
+	bot, err := tgBot.NewBotAPI(token)
 	if err != nil {
 		return nil, fmt.Errorf("faield to create the bot: %w", err)
 	}
@@ -33,7 +33,7 @@ func NewTBBotClient(token string) (Client, error) {
 }
 
 func (c *client) Send(msg string, chatID int64) error {
-	msgConfig := tbBot.NewMessage(chatID, msg)
+	msgConfig := tgBot.NewMessage(chatID, msg)
 	_, err := c.bot.Send(msgConfig)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (c *client) Send(msg string, chatID int64) error {
 	return nil
 }
 
-func (c *client) GetUpdateChannel(offset, limit, timeout int) (tbBot.UpdatesChannel, error) {
+func (c *client) GetUpdateChannel(offset, limit, timeout int) (tgBot.UpdatesChannel, error) {
 	return c.bot.GetUpdatesChan(c.newUpdateConfig(offset, limit, timeout))
 }
 
@@ -67,7 +67,7 @@ func (c *client) DownloadFile(fileID string) ([]byte, error) {
 		return nil, fmt.Errorf("bad status: %s", resp.Status)
 	}
 
-	content, err := ioutil.ReadAll(resp.Body)
+	content, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
@@ -75,8 +75,8 @@ func (c *client) DownloadFile(fileID string) ([]byte, error) {
 	return content, nil
 }
 
-func (c *client) newUpdateConfig(offset, limit, timeout int) tbBot.UpdateConfig {
-	updateConf := tbBot.NewUpdate(offset)
+func (c *client) newUpdateConfig(offset, limit, timeout int) tgBot.UpdateConfig {
+	updateConf := tgBot.NewUpdate(offset)
 	updateConf.Limit = limit
 	updateConf.Timeout = timeout
 
