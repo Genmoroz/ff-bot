@@ -1,5 +1,5 @@
-github.com/genvmoroz/bot-engine v1.0.2 h1:6BbedHmmH5z5KAdndbzJDlWgsE+wLUND0e224YWXesY=
-github.com/genvmoroz/bot-engine v1.0.2/go.mod h1:Pd+/0c8TUK6GvyWQBfi5mEp5+kf93lvJ+r2sKJSQg6U=
+github.com/genvmoroz/bot-engine v1.0.4 h1:Uem0a1D8+iJgIsvMrvmuZ8pF/spne7iAk1Gpm+u93IM=
+github.com/genvmoroz/bot-engine v1.0.4/go.mod h1:Pd+/0c8TUK6GvyWQBfi5mEp5+kf93lvJ+r2sKJSQg6U=
 github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible h1:2cauKuaELYAEARXRkq2LrJ0yDDv1rW7+wrTEdVL3uaU=
 github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible/go.mod h1:qf9acutJ8cwBUhm1bqgz6Bei9/C/c93FPDljKWwsOgM=
 github.com/google/uuid v1.2.0 h1:qJYtXnJRWmpe7m/3XlyhrsLrEURqHRM2kxzoxXqyUDs=

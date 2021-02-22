@@ -1,11 +1,12 @@
 package state
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
+	"sync"
 
 	bot "github.com/genvmoroz/bot-engine/api"
 	"github.com/genvmoroz/bot-engine/processor"
@@ -33,7 +34,9 @@ func NewStoreStateProcessor(tbBot bot.Client, chatID int64, fileStorePath string
 	}
 }
 
-func (p *storeStateProcessor) Process(updateChan <-chan tgBotApi.Update) error {
+func (p *storeStateProcessor) Process(ctx context.Context, wg *sync.WaitGroup, updateChan <-chan tgBotApi.Update) error {
+	defer wg.Done()
+
 	if updateChan == nil {
 		return errors.New("updateChan cannot be nil")
 	}
@@ -44,27 +47,37 @@ func (p *storeStateProcessor) Process(updateChan <-chan tgBotApi.Update) error {
 	}
 
 	for {
-		update, ok := <-updateChan
-		if !ok {
-			log.Printf("updateChan is closed")
+		select {
+		case <-ctx.Done():
 			return nil
-		}
-
-		text := update.Message.Text
-		if text == End {
-			msg := "End of the store state"
-			if p.totalStoredFiles != 1 {
-				msg = fmt.Sprintf("%s, %d files were stored", msg, p.totalStoredFiles)
-			} else {
-				msg = fmt.Sprintf("%s, 1 file was stored", msg)
+		case update, ok := <-updateChan:
+			if !ok {
+				return errors.New("updateChan is closed")
 			}
-			return p.tgBot.Send(msg, p.chatID)
-		}
-
-		if err := p.resolveFilesAndStore(*update.Message); err != nil {
-			return fmt.Errorf("failed to resolve files amd store: %w", err)
+			if err := p.processUpdate(update); err != nil {
+				return fmt.Errorf("failed to process the update: %w", err)
+			}
 		}
 	}
+}
+
+func (p *storeStateProcessor) processUpdate(update tgBotApi.Update) error {
+	text := update.Message.Text
+	if text == End {
+		msg := "End of the store state"
+		if p.totalStoredFiles != 1 {
+			msg = fmt.Sprintf("%s, %d files were stored", msg, p.totalStoredFiles)
+		} else {
+			msg = fmt.Sprintf("%s, 1 file was stored", msg)
+		}
+		return p.tgBot.Send(msg, p.chatID)
+	}
+
+	if err := p.resolveFilesAndStore(*update.Message); err != nil {
+		return fmt.Errorf("failed to resolve files amd store: %w", err)
+	}
+
+	return nil
 }
 
 func (p *storeStateProcessor) resolveFilesAndStore(message tgBotApi.Message) error {

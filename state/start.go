@@ -1,7 +1,9 @@
 package state
 
 import (
+	"context"
 	"fmt"
+	"sync"
 
 	bot "github.com/genvmoroz/bot-engine/api"
 	"github.com/genvmoroz/bot-engine/processor"
@@ -22,7 +24,9 @@ func NewStartStateProcessor(tbBot bot.Client, chatID int64) processor.StateProce
 	}
 }
 
-func (p *startStateProcessor) Process(_ <-chan tgBotApi.Update) error {
+func (p *startStateProcessor) Process(_ context.Context, wg *sync.WaitGroup, _ <-chan tgBotApi.Update) error {
+	defer wg.Done()
+
 	msg := "Hey there, this is First Frost Bot. Author genvmoroz@gmail.com. To list all available commands enter /help."
 	if err := p.tgBot.Send(msg, p.chatID); err != nil {
 		return fmt.Errorf("failed to send the message: %w", err)

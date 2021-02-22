@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"ff-bot/state"
 	"log"
 	"sync"
+	"time"
 
 	"ff-bot/config"
+	"ff-bot/state"
 	bot "github.com/genvmoroz/bot-engine/api"
 	"github.com/genvmoroz/bot-engine/dispatcher"
 	"github.com/genvmoroz/bot-engine/processor"
@@ -34,11 +35,12 @@ func main() {
 		log.Fatalf("failed to create the Telegram bot: %s", err.Error())
 	}
 
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	wg := sync.WaitGroup{}
 
 	wg.Add(1)
 	go func() {
-		if err = disptchr.Dispatch(updateChan); err != nil {
+		if err = disptchr.Dispatch(ctx, &wg, updateChan); err != nil {
 			log.Fatalf("failed to dispatch the updateChan: %s", err.Error())
 		}
 		wg.Done()
@@ -47,7 +49,7 @@ func main() {
 	r := router.New(cfg.Router.Port)
 	wg.Add(1)
 	go func() {
-		if err = r.ListenAndServeWithContext(context.TODO()); err != nil {
+		if err = r.ListenAndServeWithContext(ctx); err != nil {
 			log.Fatalf("failed to start the router: %s", err.Error())
 		}
 		wg.Done()
