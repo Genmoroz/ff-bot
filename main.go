@@ -2,14 +2,15 @@ package main
 
 import (
 	"context"
+	"ff-bot/state"
 	"log"
 	"sync"
 
-	"ff-bot/bot"
 	"ff-bot/config"
-	"ff-bot/dispatcher"
-	"ff-bot/processor"
-	"ff-bot/router"
+	bot "github.com/genvmoroz/bot-engine/api"
+	"github.com/genvmoroz/bot-engine/dispatcher"
+	"github.com/genvmoroz/bot-engine/processor"
+	"github.com/genvmoroz/bot-engine/router"
 )
 
 func main() {
@@ -58,8 +59,8 @@ func main() {
 func createStateProcessorMapFunc(fileStorePath string) func(tgBot bot.Client, chatID int64) map[string]processor.StateProcessor {
 	return func(tgBot bot.Client, chatID int64) map[string]processor.StateProcessor {
 		return map[string]processor.StateProcessor{
-			processor.Start: processor.NewStartStateProcessor(tgBot, chatID),
-			processor.Store: processor.NewStoreStateProcessor(tgBot, chatID, fileStorePath),
+			state.Start: state.NewStartStateProcessor(tgBot, chatID),
+			state.Store: state.NewStoreStateProcessor(tgBot, chatID, fileStorePath),
 		}
 	}
 }

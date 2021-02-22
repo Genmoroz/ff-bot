@@ -1,4 +1,4 @@
-package processor
+package state
 
 import (
 	"errors"
@@ -7,25 +7,33 @@ import (
 	"os"
 	"strings"
 
-	"ff-bot/bot"
+	bot "github.com/genvmoroz/bot-engine/api"
+	"github.com/genvmoroz/bot-engine/processor"
 	tgBotApi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/google/uuid"
 )
 
+const (
+	Store = "/store"
+	End   = "/end"
+)
+
 type storeStateProcessor struct {
-	baseStateProcessor
+	tgBot            bot.Client
+	chatID           int64
 	fileStorePath    string
 	totalStoredFiles uint32
 }
 
-func NewStoreStateProcessor(tbBot bot.Client, chatID int64, fileStorePath string) StateProcessor {
+func NewStoreStateProcessor(tbBot bot.Client, chatID int64, fileStorePath string) processor.StateProcessor {
 	return &storeStateProcessor{
-		baseStateProcessor: newBaseStateProcessor(tbBot, chatID),
-		fileStorePath:      fileStorePath,
+		tgBot:         tbBot,
+		chatID:        chatID,
+		fileStorePath: fileStorePath,
 	}
 }
 
-func (p *storeStateProcessor) Process(updateChan tgBotApi.UpdatesChannel) error {
+func (p *storeStateProcessor) Process(updateChan <-chan tgBotApi.Update) error {
 	if updateChan == nil {
 		return errors.New("updateChan cannot be nil")
 	}
