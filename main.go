@@ -43,16 +43,14 @@ func main() {
 		if err = disptchr.Dispatch(ctx, &wg, updateChan); err != nil {
 			log.Fatalf("failed to dispatch the updateChan: %s", err.Error())
 		}
-		wg.Done()
 	}()
 
 	r := router.New(cfg.Router.Port)
 	wg.Add(1)
 	go func() {
-		if err = r.ListenAndServeWithContext(ctx); err != nil {
+		if err = r.ListenAndServeWithContext(ctx, &wg); err != nil {
 			log.Fatalf("failed to start the router: %s", err.Error())
 		}
-		wg.Done()
 	}()
 
 	wg.Wait()
